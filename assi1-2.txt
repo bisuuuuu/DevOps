@@ -1,0 +1,261 @@
+
+assignment1
+1.
+#!/bin/bash
+pid=$(ps aux | grep nginx | grep -v grep | awk '{print $2}'| head -n 1)
+if [-z"$pid"];then
+echo "nginx isnt running"
+sudo systemctl start nginx
+pid=$(ps aux | grep nginx | grep -v grep | awk '{print $2}'| head -n 1)
+if [-z"$pid"];then
+echo "nginx is running"
+else
+echo "nginx isnt running"
+fi 
+else
+echo "nginx is running $pid"
+fi
+
+
+2.
+#!/bin/bash
+source_dir="/var/log"
+dest_dir="$HOME/Desktop/my_folder2"
+mkdir -p "$dest_dir"
+cp "$source_dir"/*.log "$dest_dir"
+echo "all file copy from $source_dir to $dest_dir"
+
+
+
+3.
+#!/bin/bash
+folder="folder"
+backup="archive.tar.gz"
+tar -czvf "$backup" "$folder"
+echo "after backup file is $backup"
+
+
+assi2----------------------
+1.
+#!/bin/bash
+names=$(sudo grep "Acccepted" /var/log/auth.log | awk '{print $1,$2,$3,$4}' | sort | uniq)
+echo "$names"
+
+
+
+2.
+#!/bin/bash
+echo "Hostname: $(hostname)"
+echo "IP address: $(hostname -I | awk '{print $1}')"
+echo "Total Memory : $(free -m | awk '/Mem:/ {print $2}')"
+
+
+
+
+3.
+#!/bin/bash
+usage=$(df / | awk 'NR==2 {print $5}' | sed 's/%//')
+if [ "$usage" -gt 80 ]; then
+  echo "ALERT: Root partition usage is above 80% ($usage%)"
+else
+  echo "Disk usage is OK ($usage%)"
+fi
+
+
+
+
+4.
+#!/bin/bash
+while IFS=: read -r username _ _ _ _ _ home; do
+  if [ -d "$home" ]; then
+    echo "$username → Home directory exists"
+  else
+    echo "$username → Home directory not found"
+  fi
+done < /etc/passwd
+
+
+
+5. 
+#!/bin/bash
+logfile="sample.log"
+grep -n "ERROR" "$logfile"
+
+
+log file:
+Line 1: Starting process
+Line 2: ERROR: Failed to connect
+Line 3: Process done
+Line 4: ERROR: Timeout occurred
+
+
+
+
+
+
+
+
+
+
+
+
+
+6
+#!/bin/bash
+services="ssh cron"
+for s in $services; do
+  systemctl is-active --quiet "$s"
+  if [ $? -eq 0 ]; then
+    echo "$s is running"
+  else
+    echo "$s is not running"
+  fi
+done
+
+
+
+
+
+
+
+
+
+
+7. #!/bin/bash
+file="data.csv"
+while IFS=, read -r col1 col2 col3 rest; do
+  echo "$col1 | $col2 | $col3"
+done < "$file"
+
+
+data.csv
+Name , Age , Department
+Alice , 24 , IT
+Bob , 30 , HR
+
+
+
+
+
+
+
+
+8.
+#!/bin/bash
+read -p "Enter password: " pass
+if [[ ${#pass} -ge 8 ]] && [[ "$pass" == *[0-9]* ]] && [[ "$pass" == *[@#$%!*]* ]]; then
+  echo "Strong password "
+else
+  echo "Weak password  (Need 8+ characters, 1 number, 1 special character)"
+fi
+
+
+
+
+
+
+
+
+9.
+#!/bin/bash
+read -p "Enter process name: " pname
+ps aux | grep "$pname" | grep -v grep
+
+
+
+
+
+
+
+
+
+10.
+#!/bin/bash
+folder="/var/log"  # or ~/Downloads/testfolder
+find "$folder" -name "*.log" -type f -mtime +7 -exec rm -v {} \;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+regex pdf qs ---------------------------------------------------------------------
+datafile.txt :
+sita    25      HR
+John    30      Finance
+Kiran   28      Marketing
+Steve   32      IT
+Rita    29      HR
+Ram     34      Admin
+Jeevan  40      Research
+Sneha   27      Sales
+Hello   99      Testing
+TestT   100     String
+
+
+1. grep -i '^s.[^ ]*a' datafile.txt | awk '{print $1, $2, $3}'
+2.grep 'n$' datafile.txt
+3. grep '^J.[^ ]*n' datafile.txt
+4.ifconfig | grep -oP 'inet\s+\K[\d.]+' | grep -v '^127'
+5.sed 's/ll/l/g' datafile.txt
+6.sed 's/\bH[^ ]*/REPLACED/g' datafile.txt
+7.echo "TestT100String" | grep -o '[0-9]\+'
+8.
+
+more --------------------
+
+
+1. #!/bin/bash
+
+folder=$1
+latest=$(ls -t "$folder" | head -n 1)
+cp "$folder/$latest" "$folder/copy_$latest"
+
+tr -s ' ' '\n' < "$folder/$latest" | sort | uniq -c | sort -nr | head -n 1
+
+
+
+
+2.
+#!/bin/bash
+
+last_user=$(last -w | head -n 1 | awk '{print $1}')
+echo "Last user: $last_user"
+
+find /home -user "$last_user" 2>/dev/null
+
+echo "Total login time:"
+last -F "$last_user"
+
+
+
+
+
+
+
+
+
+
+
+
+
+3.
+#!/bin/bash
+
+path=$(find /etc -name 'conf.d' 2>/dev/null | head -n 1)
+echo "Original Path: $path"
+
+echo "$path" | sed 's/\//-/g'
+
+
+
