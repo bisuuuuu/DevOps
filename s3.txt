@@ -1,0 +1,103 @@
+s3
+
+
+1.#!/bin/bash
+
+# Generate a random bucket name
+bucket="bisu-bucket-$RANDOM$RANDOM"
+echo "Bucket name: $bucket"
+
+# Create bucket
+aws s3 mb s3://$bucket
+
+# Create sample file
+echo "echo Hello from Bisu!" > test.sh
+
+# Upload file to bucket
+aws s3 cp test.sh s3://$bucket/
+
+# List bucket contents
+aws s3 ls s3://$bucket/
+
+# Remove file and delete bucket
+aws s3 rm s3://$bucket/test.sh
+aws s3 rb s3://$bucket
+
+
+
+2.
+#!/bin/bash
+
+bucket="your-bucket-name"
+aws s3api put-bucket-acl --bucket $bucket --acl public-read
+echo "ACL set to public-read for $bucket"
+
+
+
+
+3.
+#!/bin/bash
+
+bucket="bisu-website-$RANDOM$RANDOM"
+aws s3 mb s3://$bucket
+
+# Create index.html
+echo "<h1>Hello from Bisu's S3 site!</h1>" > index.html
+
+# Upload with public-read
+aws s3 cp index.html s3://$bucket/ --acl public-read
+
+# Enable website hosting
+aws s3 website s3://$bucket/ --index-document index.html
+
+# Set public access policy
+aws s3api put-bucket-policy --bucket $bucket --policy "{
+  \"Version\": \"2012-10-17\",
+  \"Statement\": [{
+    \"Effect\": \"Allow\",
+    \"Principal\": \"*\",
+    \"Action\": \"s3:GetObject\",
+    \"Resource\": \"arn:aws:s3:::$bucket/*\"
+  }]
+}"
+
+# Show website URL (replace region)
+echo "Website URL: http://$bucket.s3-website-ap-south-1.amazonaws.com"
+  
+
+4.#!/bin/bash
+
+# Create EC2 instance
+key="bisu-key"
+aws ec2 create-key-pair --key-name $key --query 'KeyMaterial' --output text > $key.pem
+chmod 400 $key.pem
+
+sg_id=$(aws ec2 create-security-group --group-name bisu-sg --description "SG" --query 'GroupId' --output text)
+aws ec2 authorize-security-group-ingress --group-id $sg_id --protocol tcp --port 22 --cidr 0.0.0.0/0
+
+instance_id=$(aws ec2 run-instances \
+ --image-id ami-0c1a7f89451184c8b \  # Replace with your region’s AMI
+ --count 1 --instance-type t2.micro \
+ --key-name $key --security-group-ids $sg_id \
+ --query 'Instances[0].InstanceId' --output text)
+
+aws ec2 wait instance-running --instance-ids $instance_id
+
+# Get public DNS
+dns=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservations[0].Instances[0].PublicDnsName' --output text)
+echo "Public DNS: $dns"
+
+# Create remote script to create S3 bucket + access point
+cat <<EOF > remote-script.sh
+#!/bin/bash
+bucket="remote-bisu-bucket-\$RANDOM\$RANDOM"
+aws s3 mb s3://\$bucket
+aws s3control create-access-point --account-id YOUR_AWS_ACCOUNT_ID --name bisu-ap --bucket \$bucket --region ap-south-1
+EOF
+
+# Copy and run on EC2
+scp -i $key.pem -o StrictHostKeyChecking=no remote-script.sh ec2-user@$dns:/home/ec2-user/
+ssh -i $key.pem ec2-user@$dns 'bash remote-script.sh'
+
+
+
